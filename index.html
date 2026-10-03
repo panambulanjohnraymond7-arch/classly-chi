@@ -423,9 +423,27 @@ if(data.name) startApp();
 </body>
 </html>
 <script>
-window.addEventListener('load',()=>{
-  const start=()=>{if(typeof initSharedDatabase==='function')initSharedDatabase();};
-  if(window.ClasslyFirebase) start();
-  else setTimeout(start,1000);
-});
+function startFirebaseWhenReady(){
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    if(typeof initSharedDatabase==='function' && window.ClasslyFirebase){
+      clearInterval(timer);
+      initSharedDatabase();
+    } else if(tries>=50){
+      clearInterval(timer);
+      const status=document.getElementById('syncStatus');
+      if(status){
+        status.textContent='● Firebase failed to load';
+        status.style.color='#ef476f';
+      }
+      console.error('Firebase SDK/config did not become available.');
+    }
+  },100);
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',startFirebaseWhenReady);
+}else{
+  startFirebaseWhenReady();
+}
 </script>
