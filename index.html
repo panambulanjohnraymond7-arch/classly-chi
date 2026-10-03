@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+CLASSLY SHARED DATABASE SETUP
+1. Create a Firebase project.
+2. Create Realtime Database.
+3. Create a Web App.
+4. Copy the firebaseConfig values into the firebaseConfig object above.
+5. For initial testing, Realtime Database Rules can be:
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+IMPORTANT: Those public rules let anyone with your site write/delete data.
+For a real school deployment, use Firebase Authentication and protected rules.
+-->
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classly — Student Organizer</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#ffffff;--text:#172033;--muted:#718096;--line:#e7ebf3;
+  --primary:#6c63ff;--primary2:#8b5cf6;--soft:#eeecff;--danger:#ef476f;
+  --success:#16a085;--shadow:0 18px 50px rgba(32,38,70,.10);--radius:22px;
+}
+body.girl{--primary:#e85d9e;--primary2:#a855f7;--soft:#ffe8f3}
+body.boy{--primary:#1677ff;--primary2:#00a8ff;--soft:#e7f2ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0}
+.hidden{display:none!important}
+
+/* LOGIN */
+.login{min-height:100vh;display:grid;place-items:center;padding:25px;position:relative;overflow:hidden;
+background:radial-gradient(circle at 10% 10%,var(--soft),transparent 35%),radial-gradient(circle at 90% 90%,#dff7ff,transparent 35%),var(--bg)}
+.blob{position:absolute;border-radius:50%;filter:blur(2px);opacity:.55;animation:float 7s ease-in-out infinite}
+.b1{width:180px;height:180px;background:#a855f7;top:-50px;right:10%}.b2{width:130px;height:130px;background:#22d3ee;bottom:8%;left:5%;animation-delay:1s}
+@keyframes float{50%{transform:translateY(-18px) scale(1.04)}}
+.login-card{width:min(480px,100%);background:rgba(255,255,255,.88);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.8);box-shadow:var(--shadow);border-radius:32px;padding:38px;position:relative;z-index:2}
+.logo{display:flex;align-items:center;gap:12px;font-weight:900;font-size:25px;letter-spacing:-1px}
+.logo-icon{width:45px;height:45px;border-radius:14px;display:grid;place-items:center;color:white;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 10px 25px color-mix(in srgb,var(--primary) 35%,transparent)}
+.login-card h1{font-size:38px;line-height:1.05;margin:28px 0 10px;letter-spacing:-1.8px}
+.login-card p{color:var(--muted);margin-bottom:25px}
+.input{width:100%;padding:15px 17px;border:1px solid var(--line);border-radius:15px;outline:none;background:#fff;color:var(--text);transition:.2s}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--soft)}
+.label{font-size:13px;font-weight:800;margin:15px 0 8px;display:block}
+.theme-picks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.theme-pick{padding:14px;border:2px solid var(--line);border-radius:16px;background:white;text-align:left;display:flex;align-items:center;gap:10px}
+.theme-pick.active{border-color:var(--primary);background:var(--soft)}
+.dot{width:16px;height:16px;border-radius:50%}.pink{background:#e85d9e}.blue{background:#1677ff}
+.primary-btn{width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,var(--primary),var(--primary2));color:white;font-weight:850;margin-top:20px;box-shadow:0 12px 25px color-mix(in srgb,var(--primary) 25%,transparent);transition:.2s}
+.primary-btn:hover{transform:translateY(-2px)}
+
+/* APP */
+.app{min-height:100vh;display:grid;grid-template-columns:255px 1fr}
+.sidebar{background:var(--card);border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.nav{margin-top:35px;display:grid;gap:7px}
+.nav button{background:transparent;color:var(--muted);padding:13px 14px;border-radius:14px;text-align:left;font-weight:750;display:flex;align-items:center;gap:12px}
+.nav button.active,.nav button:hover{background:var(--soft);color:var(--primary)}
+.sidebar-bottom{margin-top:auto}
+.profile-mini{padding:13px;border-radius:18px;background:var(--soft);display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.avatar{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-weight:900}
+.profile-mini small{display:block;color:var(--muted)}
+.logout{width:100%;padding:11px;border-radius:13px;background:#fff0f3;color:var(--danger);font-weight:800}
+.main{padding:28px 32px;max-width:1600px;width:100%;margin:auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:28px}
+.greeting h2{font-size:28px;margin:0 0 5px;letter-spacing:-1px}.greeting p{margin:0;color:var(--muted)}
+.date-pill{background:var(--card);border:1px solid var(--line);padding:12px 16px;border-radius:14px;color:var(--muted);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:19px;box-shadow:0 8px 25px rgba(30,40,70,.04)}
+.stat-top{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;font-weight:800}.stat-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--soft);color:var(--primary)}
+.stat strong{font-size:30px;display:block;margin-top:13px}.stat span{font-size:12px;color:var(--muted)}
+.content-grid{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-top:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:21px;box-shadow:0 8px 25px rgba(30,40,70,.04)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}.card-head h3{margin:0;font-size:18px}.sub{color:var(--muted);font-size:12px}
+.add-btn{background:var(--soft);color:var(--primary);padding:9px 12px;border-radius:11px;font-weight:850}
+.class-item,.deadline-item,.reminder-item{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}
+.class-item:last-child,.deadline-item:last-child,.reminder-item:last-child{border-bottom:0}
+.time{min-width:75px;font-weight:850;font-size:13px}.class-dot{width:10px;height:42px;border-radius:8px;background:linear-gradient(var(--primary),var(--primary2))}
+.item-main{flex:1}.item-main strong{display:block;font-size:14px}.item-main small{color:var(--muted)}
+.tag{padding:6px 9px;border-radius:9px;background:var(--soft);color:var(--primary);font-size:11px;font-weight:850}
+.deadline-item.overdue .tag{background:#fff0f3;color:var(--danger)}
+.progress{height:8px;border-radius:99px;background:#edf0f6;overflow:hidden;margin-top:9px}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary2));border-radius:99px}
+.empty{text-align:center;color:var(--muted);padding:25px 5px;font-size:13px}
+
+/* VIEWS */
+.view{display:none}.view.active{display:block}
+.table-wrap{overflow:auto}.schedule{width:100%;border-collapse:separate;border-spacing:8px;min-width:750px}.schedule th{font-size:12px;color:var(--muted);padding:8px}.schedule td{height:75px;background:#fafbfe;border:1px solid var(--line);border-radius:14px;padding:10px;vertical-align:top}.schedule .hour{background:transparent;border:0;color:var(--muted);font-size:12px;font-weight:800}.class-chip{height:100%;background:var(--soft);border-left:4px solid var(--primary);border-radius:10px;padding:8px;font-size:12px;font-weight:800}.class-chip small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap}.toolbar .input,.toolbar select{width:auto;min-width:150px}
+.list-card{margin-top:15px}
+.item-actions{display:flex;gap:7px}.icon-btn{width:32px;height:32px;border-radius:9px;background:#f3f5f9;color:var(--muted)}.icon-btn:hover{background:var(--soft);color:var(--primary)}
+.check{width:19px;height:19px;accent-color:var(--primary)}
+.done{text-decoration:line-through;opacity:.5}
+.modal-bg{position:fixed;inset:0;background:rgba(15,20,35,.45);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal-bg.show{display:flex}
+.modal{width:min(500px,100%);background:white;border-radius:24px;padding:25px;box-shadow:var(--shadow)}.modal h3{margin-top:0}.form-grid{display:grid;gap:12px}.form-grid label{font-size:12px;font-weight:800}.form-grid input,.form-grid select{margin-top:6px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}.secondary-btn{padding:12px 15px;border-radius:12px;background:#f1f3f7;font-weight:800}.modal .primary-btn{width:auto;margin:0;padding:12px 18px}
+.toast{position:fixed;right:25px;bottom:25px;background:#172033;color:white;padding:13px 17px;border-radius:14px;box-shadow:var(--shadow);z-index:100;transform:translateY(20px);opacity:0;pointer-events:none;transition:.25s}.toast.show{opacity:1;transform:translateY(0)}
+.mobile-menu{display:none}
+
+/* RESPONSIVE */
+@media(max-width:1000px){.app{grid-template-columns:85px 1fr}.sidebar .logo span,.nav button span,.profile-mini .profile-text,.logout span{display:none}.sidebar{align-items:center}.nav button{justify-content:center}.profile-mini{padding:8px}.logout{font-size:0}.logout:first-letter{font-size:16px}.content-grid{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.app{display:block}.sidebar{height:auto;position:sticky;top:0;z-index:30;flex-direction:row;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);align-items:center}.sidebar .logo{margin-right:auto}.nav{margin:0;display:flex}.nav button{padding:10px}.sidebar-bottom{display:none}.main{padding:18px 13px}.topbar{align-items:flex-start}.date-pill{display:none}.greeting h2{font-size:23px}.grid{grid-template-columns:1fr 1fr;gap:10px}.stat{padding:14px}.stat strong{font-size:24px}.content-grid{gap:12px}.card{padding:16px}.nav button span{display:none}.login-card{padding:28px 22px}.login-card h1{font-size:31px}}
+</style>
+</head>
+<body>
+<section id="loginScreen" class="login">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="login-card">
+    <div class="logo"><div class="logo-icon">✦</div><span>Classly</span></div>
+    <h1>Your semester,<br><span style="color:var(--primary)">under control.</span></h1>
+    <p>A beautiful personal organizer for classes, deadlines and reminders.</p>
+    <label class="label">What's your name?</label>
+    <input id="nameInput" class="input" placeholder="Enter your name" maxlength="30">
+    <label class="label">Choose your theme</label>
+    <div class="theme-picks">
+      <button class="theme-pick active" data-theme="boy"><i class="dot blue"></i><b>Blue / Boy</b></button>
+      <button class="theme-pick" data-theme="girl"><i class="dot pink"></i><b>Pink / Girl</b></button>
+    </div>
+    <button id="enterBtn" class="primary-btn">Enter my organizer →</button>
+  </div>
+</section>
+
+<section id="app" class="app hidden">
+<aside class="sidebar">
+  <div class="logo"><div class="logo-icon">✦</div><span>Classly</span></div>
+  <nav class="nav">
+    <button class="active" data-view="dashboard">⌂ <span>Dashboard</span></button>
+    <button data-view="schedule">▦ <span>Time Table</span></button>
+    <button data-view="deadlines">◷ <span>Deadlines</span></button>
+    <button data-view="reminders">♢ <span>Reminders</span></button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="profile-mini"><div class="avatar" id="avatar">J</div><div class="profile-text"><b id="sideName">Student</b><small id="sideTheme">Blue theme</small></div></div>
+    <button class="logout" id="logout">↪ <span>Log out</span></button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="greeting"><h2 id="hello">Good evening 👋</h2><p>Let's keep your school life organized.</p></div>
+    <div class="date-pill" id="today"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="view active">
+    <div class="grid">
+      <div class="stat"><div class="stat-top">Classes <div class="stat-icon">▦</div></div><strong id="statClasses">0</strong><span>scheduled today</span></div>
+      <div class="stat"><div class="stat-top">Deadlines <div class="stat-icon">◷</div></div><strong id="statDeadlines">0</strong><span>tasks remaining</span></div>
+      <div class="stat"><div class="stat-top">Reminders <div class="stat-icon">♢</div></div><strong id="statReminders">0</strong><span>active reminders</span></div>
+      <div class="stat"><div class="stat-top">Progress <div class="stat-icon">✓</div></div><strong id="statProgress">0%</strong><span>deadline completion</span></div>
+    </div>
+    <div class="content-grid">
+      <div class="card"><div class="card-head"><div><h3>Today's classes</h3><div class="sub">Your schedule for today</div></div><button class="add-btn" onclick="openModal('class')">+ Add</button></div><div id="todayClasses"></div></div>
+      <div class="card"><div class="card-head"><div><h3>Upcoming deadlines</h3><div class="sub">Don't miss your submissions</div></div><button class="add-btn" onclick="switchView('deadlines')">View all</button></div><div id="upcomingDeadlines"></div></div>
+    </div>
+    <div class="card" style="margin-top:18px"><div class="card-head"><div><h3>Quick reminders</h3><div class="sub">Things you want to remember</div></div><button class="add-btn" onclick="openModal('reminder')">+ Add</button></div><div id="quickReminders"></div></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="schedule" class="view">
+    <div class="card"><div class="card-head"><div><h3>Weekly Time Table</h3><div class="sub">Plan your classes at a glance</div></div><button class="add-btn" onclick="openModal('class')">+ Add class</button></div><div class="table-wrap"><table class="schedule"><thead><tr><th>TIME</th><th>MON</th><th>TUE</th><th>WED</th><th>THU</th><th>FRI</th><th>SAT</th></tr></thead><tbody id="scheduleBody"></tbody></table></div></div>
+  </section>
+
+  <!-- DEADLINES -->
+  <section id="deadlines" class="view">
+    <div class="card"><div class="card-head"><div><h3>Deadlines</h3><div class="sub">Assignments, projects and exams</div></div><button class="add-btn" onclick="openModal('deadline')">+ Add deadline</button></div><div id="deadlineList"></div></div>
+  </section>
+
+  <!-- REMINDERS -->
+  <section id="reminders" class="view">
+    <div class="card"><div class="card-head"><div><h3>Reminders</h3><div class="sub">Personal notes for your student life</div></div><button class="add-btn" onclick="openModal('reminder')">+ Add reminder</button></div><div id="reminderList"></div></div>
+  </section>
+</main>
+</section>
+
+<div id="modalBg" class="modal-bg">
+ <div class="modal"><h3 id="modalTitle">Add item</h3><div id="modalContent"></div><div class="modal-actions"><button class="secondary-btn" onclick="closeModal()">Cancel</button><button class="primary-btn" id="saveModal">Save</button></div></div>
+</div>
+<div id="toast" class="toast"></div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getDatabase, ref, onValue, push, set, remove, update } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_AUTH_DOMAIN",
+  databaseURL: "PASTE_DATABASE_URL",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE_STORAGE_BUCKET",
+  messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+
+window.ClasslyFirebase = {initializeApp,getDatabase,ref,onValue,push,set,remove,update,firebaseConfig};
+</script>
+
+<script>
+const KEY='classlyDataV1';
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{name:'',theme:'boy',classes:[],deadlines:[],reminders:[]};
+let modalType=null;
+let sharedDB=null, sharedReady=false;
+let firebaseError='';
+
+function initSharedDatabase(){
+ const cfg=window.ClasslyFirebase?.firebaseConfig;
+ const status=document.getElementById('syncStatus');
+ if(!cfg || cfg.apiKey.startsWith('PASTE_')){
+   firebaseError='Firebase config is still missing.';
+   if(status){status.textContent='● Firebase not connected';status.style.color='#ef476f';}
+   return;
+ }
+ try{
+  const fb=window.ClasslyFirebase;
+  const app=fb.initializeApp(cfg);
+  sharedDB=fb.getDatabase(app);
+  const root=fb.ref(sharedDB,'classly');
+
+  fb.onValue(root,snap=>{
+   const v=snap.val() || {};
+   data.classes=Object.values(v.classes||{});
+   data.deadlines=Object.values(v.deadlines||{});
+   data.reminders=Object.values(v.reminders||{});
+   localStorage.setItem(KEY,JSON.stringify(data));
+   sharedReady=true;
+   if(status){status.textContent='● Shared online';status.style.color='#16a085';}
+   render();
+  },err=>{
+   firebaseError=err.message || 'Could not read Firebase.';
+   sharedReady=false;
+   if(status){status.textContent='● Database error';status.style.color='#ef476f';}
+   console.error(err);
+  });
+ }catch(e){
+  firebaseError=e.message||'Firebase setup failed';
+  sharedReady=false;
+  if(status){status.textContent='● Database error';status.style.color='#ef476f';}
+  console.error(e);
+ }
+}
+async function cloudAdd(type,item){
+ if(!sharedReady) throw new Error(firebaseError||'Firebase is not connected.');
+ const fb=window.ClasslyFirebase;
+ const r=fb.push(fb.ref(sharedDB,'classly/'+type));
+ item.id=r.key;
+ await fb.set(r,item);
+}
+async function cloudDelete(type,id){
+ if(!sharedReady) throw new Error(firebaseError||'Firebase is not connected.');
+ const fb=window.ClasslyFirebase;
+ await fb.remove(fb.ref(sharedDB,'classly/'+type+'/'+id));
+}
+async function cloudToggle(type,id,done){
+ if(!sharedReady) throw new Error(firebaseError||'Firebase is not connected.');
+ const fb=window.ClasslyFirebase;
+ await fb.update(fb.ref(sharedDB,'classly/'+type+'/'+id),{done});
+}
+
+const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const shortDays=['Mon','Tue','Wed','Thu','Fri','Sat'];
+const icons={class:'▦',deadline:'◷',reminder:'♢'};
+
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function applyTheme(){document.body.classList.remove('boy','girl');document.body.classList.add(data.theme)}
+function escape(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function formatDate(d){return new Date(d+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
+function switchView(v){
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+ document.getElementById(v).classList.add('active');
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+ render();
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+
+document.querySelectorAll('.theme-pick').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.theme-pick').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+ data.theme=b.dataset.theme;applyTheme();
+});
+
+function login(){
+ const n=document.getElementById('nameInput').value.trim();
+ if(!n){toast('Please enter your name first');return}
+ data.name=n;save();startApp();
+}
+document.getElementById('enterBtn').onclick=login;
+document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+
+function startApp(){
+ applyTheme();document.getElementById('loginScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
+ document.getElementById('sideName').textContent=data.name;document.getElementById('avatar').textContent=data.name.charAt(0).toUpperCase();
+ document.getElementById('sideTheme').textContent=data.theme==='girl'?'Pink theme':'Blue theme';
+ updateClockText();render();
+}
+function updateClockText(){
+ const now=new Date(), h=now.getHours();const greet=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+ document.getElementById('hello').textContent=`${greet}, ${data.name.split(' ')[0]} 👋`;
+ document.getElementById('today').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+}
+document.getElementById('logout').onclick=()=>{document.getElementById('app').classList.add('hidden');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('nameInput').value=data.name};
+
+function todayName(){return days[(new Date().getDay()+6)%7]}
+function render(){
+ updateClockText();
+ const td=todayName();
+ const todayClasses=data.classes.filter(c=>c.day===td).sort((a,b)=>a.time.localeCompare(b.time));
+ document.getElementById('statClasses').textContent=todayClasses.length;
+ const activeD=data.deadlines.filter(d=>!d.done);
+ document.getElementById('statDeadlines').textContent=activeD.length;
+ document.getElementById('statReminders').textContent=data.reminders.filter(r=>!r.done).length;
+ const completed=data.deadlines.filter(d=>d.done).length;
+ document.getElementById('statProgress').textContent=data.deadlines.length?Math.round(completed/data.deadlines.length*100)+'%':'0%';
+
+ document.getElementById('todayClasses').innerHTML=todayClasses.length?todayClasses.map(classHTML).join(''):'<div class="empty">No classes today. Enjoy the free time! ✨</div>';
+ const up=[...activeD].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+ document.getElementById('upcomingDeadlines').innerHTML=up.length?up.map(deadlineHTML).join(''):'<div class="empty">No upcoming deadlines 🎉</div>';
+ const rr=data.reminders.filter(r=>!r.done).slice(0,4);
+ document.getElementById('quickReminders').innerHTML=rr.length?rr.map(reminderHTML).join(''):'<div class="empty">Nothing to remember right now.</div>';
+ renderSchedule();renderDeadlines();renderReminders();
+}
+function classHTML(c){
+ return `<div class="class-item"><div class="time">${escape(c.time)}</div><div class="class-dot"></div><div class="item-main"><strong>${escape(c.subject)}</strong><small>${escape(c.room||'No room')} · ${escape(c.teacher||'No teacher')}</small></div><span class="tag">${escape(c.day)}</span><div class="item-actions"><button class="icon-btn" onclick="deleteItem('classes','${c.id}')">×</button></div></div>`
+}
+function deadlineHTML(d){
+ const past=!d.done&&d.date<new Date().toISOString().slice(0,10);
+ return `<div class="deadline-item ${past?'overdue':''}"><div class="stat-icon">${d.done?'✓':'◷'}</div><div class="item-main ${d.done?'done':''}"><strong>${escape(d.title)}</strong><small>${formatDate(d.date)} · ${escape(d.subject||'General')}</small><div class="progress"><i style="width:${d.done?100:35}%"></i></div></div><span class="tag">${past?'Overdue':d.done?'Done':'Pending'}</span><div class="item-actions"><button class="icon-btn" onclick="toggleDone('deadlines','${d.id}')">✓</button><button class="icon-btn" onclick="deleteItem('deadlines','${d.id}')">×</button></div></div>`
+}
+function reminderHTML(r){
+ return `<div class="reminder-item"><input class="check" type="checkbox" ${r.done?'checked':''} onchange="toggleDone('reminders','${r.id}')"><div class="item-main ${r.done?'done':''}"><strong>${escape(r.text)}</strong><small>${r.date?formatDate(r.date):'No date set'}</small></div><div class="item-actions"><button class="icon-btn" onclick="deleteItem('reminders','${r.id}')">×</button></div></div>`
+}
+function renderSchedule(){
+ const hours=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+ document.getElementById('scheduleBody').innerHTML=hours.map(h=>{
+   let cells=shortDays.map(day=>{
+     const full=days[shortDays.indexOf(day)];
+     const found=data.classes.filter(c=>c.day===full&&c.time.startsWith(h.slice(0,2)));
+     return `<td>${found.map(c=>`<div class="class-chip"><div>${escape(c.subject)}</div><small>${escape(c.time)} · ${escape(c.room||'')}</small></div>`).join('')}</td>`
+   }).join('');
+   return `<tr><td class="hour">${h}</td>${cells}</tr>`
+ }).join('');
+}
+function renderDeadlines(){
+ const list=[...data.deadlines].sort((a,b)=>a.date.localeCompare(b.date));
+ document.getElementById('deadlineList').innerHTML=list.length?list.map(deadlineHTML).join(''):'<div class="empty">No deadlines yet. Add your first assignment.</div>';
+}
+function renderReminders(){
+ document.getElementById('reminderList').innerHTML=data.reminders.length?[...data.reminders].reverse().map(reminderHTML).join(''):'<div class="empty">No reminders yet. Add something you do not want to forget.</div>';
+}
+async function toggleDone(type,id){
+ const x=data[type].find(x=>x.id===id);
+ if(x){
+  const newDone=!x.done;
+  if(!sharedReady){toast('Firebase is not connected yet');return}
+  try{await cloudToggle(type,id,newDone);x.done=newDone;save();render();toast(newDone?'Marked as complete ✓':'Marked as pending')}
+  catch(e){toast('Could not update online — check Firebase rules')}
+ }
+}
+async function deleteItem(type,id){
+ if(!sharedReady){toast('Firebase is not connected yet');return}
+ try{
+  await cloudDelete(type,id);
+  data[type]=data[type].filter(x=>x.id!==id);
+  save();render();toast('Removed for everyone ✓')
+ }catch(e){toast('Could not delete online — check Firebase rules')}
+}
+
+function openModal(type){
+ modalType=type;document.getElementById('modalBg').classList.add('show');
+ const title={class:'Add a class',deadline:'Add a deadline',reminder:'Add a reminder'}[type];
+ document.getElementById('modalTitle').textContent=title;
+ let c='';
+ if(type==='class') c=`<div class="form-grid">
+ <label>Subject<input id="fSubject" class="input" placeholder="e.g. Programming 1"></label>
+ <label>Day<select id="fDay" class="input">${days.map(d=>`<option>${d}</option>`).join('')}</select></label>
+ <label>Time<input id="fTime" class="input" type="time" value="08:00"></label>
+ <label>Room<input id="fRoom" class="input" placeholder="e.g. Lab 2"></label>
+ <label>Teacher<input id="fTeacher" class="input" placeholder="e.g. Mr. Santos"></label></div>`;
+ if(type==='deadline') c=`<div class="form-grid">
+ <label>Title<input id="fTitle" class="input" placeholder="e.g. Java activity"></label>
+ <label>Subject<input id="fSubject" class="input" placeholder="e.g. Programming"></label>
+ <label>Due date<input id="fDate" class="input" type="date"></label></div>`;
+ if(type==='reminder') c=`<div class="form-grid">
+ <label>Reminder<input id="fText" class="input" placeholder="e.g. Bring ID tomorrow"></label>
+ <label>Date <span style="color:var(--muted)">(optional)</span><input id="fDate" class="input" type="date"></label></div>`;
+ document.getElementById('modalContent').innerHTML=c;
+ if(type==='deadline') document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');modalType=null}
+document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal()};
+document.getElementById('saveModal').onclick=async()=>{
+ const id=Date.now().toString();let item=null,type=null;
+ if(modalType==='class'){
+  const subject=document.getElementById('fSubject').value.trim();if(!subject){toast('Add a subject');return}
+  item={id,subject,day:document.getElementById('fDay').value,time:document.getElementById('fTime').value,room:document.getElementById('fRoom').value,teacher:document.getElementById('fTeacher').value};type='classes';
+ }
+ if(modalType==='deadline'){
+  const title=document.getElementById('fTitle').value.trim(),date=document.getElementById('fDate').value;if(!title||!date){toast('Add a title and due date');return}
+  item={id,title,subject:document.getElementById('fSubject').value,date,done:false};type='deadlines';
+ }
+ if(modalType==='reminder'){
+  const text=document.getElementById('fText').value.trim();if(!text){toast('Write a reminder');return}
+  item={id,text,date:document.getElementById('fDate').value,done:false};type='reminders';
+ }
+ if(item){
+  if(sharedReady){
+   try{await cloudAdd(type,item);toast('Added for everyone ✓')}
+   catch(e){toast('Could not save online — check Firebase rules')}
+  }else{
+   toast('Firebase is not connected yet');
+  }
+ }
+ closeModal();render();
+};applyTheme();
+if(data.name) startApp();
+</script>
+</body>
+</html>
+<script>
+window.addEventListener('load',()=>{
+  const start=()=>{if(typeof initSharedDatabase==='function')initSharedDatabase();};
+  if(window.ClasslyFirebase) start();
+  else setTimeout(start,1000);
+});
+</script>
