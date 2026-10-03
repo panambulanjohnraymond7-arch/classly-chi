@@ -108,7 +108,7 @@ background:radial-gradient(circle at 10% 10%,var(--soft),transparent 35%),radial
 </style>
 </head>
 <body>
-<section id="loginScreen" class="login" style="display:grid;">
+<section id="loginScreen" class="login">
   <div class="blob b1"></div><div class="blob b2"></div>
   <div class="login-card">
     <div class="logo"><div class="logo-icon">✦</div><span>Classly</span></div>
@@ -125,7 +125,7 @@ background:radial-gradient(circle at 10% 10%,var(--soft),transparent 35%),radial
   </div>
 </section>
 
-<section id="app" class="app hidden" style="display:none;">
+<section id="app" class="app hidden">
 <aside class="sidebar">
   <div class="logo"><div class="logo-icon">✦</div><span>Classly</span></div>
   <nav class="nav">
@@ -418,14 +418,32 @@ document.getElementById('saveModal').onclick=async()=>{
  }
  closeModal();render();
 };applyTheme();
-// Do not auto-login. Show the login screen when the site opens.
+if(data.name) startApp();
 </script>
 </body>
 </html>
 <script>
-window.addEventListener('load',()=>{
-  const start=()=>{if(typeof initSharedDatabase==='function')initSharedDatabase();};
-  if(window.ClasslyFirebase) start();
-  else setTimeout(start,1000);
-});
+function startFirebaseWhenReady(){
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    if(typeof initSharedDatabase==='function' && window.ClasslyFirebase){
+      clearInterval(timer);
+      initSharedDatabase();
+    } else if(tries>=50){
+      clearInterval(timer);
+      const status=document.getElementById('syncStatus');
+      if(status){
+        status.textContent='● Firebase failed to load';
+        status.style.color='#ef476f';
+      }
+      console.error('Firebase SDK/config did not become available.');
+    }
+  },100);
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',startFirebaseWhenReady);
+}else{
+  startFirebaseWhenReady();
+}
 </script>
